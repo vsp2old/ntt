@@ -263,7 +263,10 @@ int garner_convolution(T *rp, const T *ap, int an, const T *bp, int bn, T mod)
 	}
 	for (int I = 0; I < N; ++I)
 	{
-		int bc = NTT_TABLE[I].convolution(b, ap, an, bp, bn, n); assert(bc == n);
+#ifndef NDEBUG
+		int bc = 
+#endif
+		NTT_TABLE[I].convolution(b, ap, an, bp, bn, n); assert(bc == n);
 		// Garner Algorithm
 		// for each step, we solve "coeffs[I] * t[I] + constants[I] = b[I] (mod. m[I])"
 		//      coeffs[I] = m[0]m[1]...m[I-1]

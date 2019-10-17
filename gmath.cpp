@@ -6,9 +6,9 @@ uint32_t mcn_mulm(uint32_t a, uint32_t b, uint32_t mod)
 	__asm__ __volatile__ (
 		"movl %%ecx, %%eax\n\t"
 		"mull %%edx\n\t"
-		"divl %%r8d\n\t"
+		"divl %%ebx\n\t"
 		"movl %%edx, %%eax\n\t"
-		: "=a" (r)
+		: "=a" (r) : "c"(a), "d"(b), "b"(mod)
 	);
 	return r;
 }
@@ -19,9 +19,9 @@ uint64_t mcn_mulm(uint64_t a, uint64_t b, uint64_t mod)
 	__asm__ __volatile__ (
 		"movq %%rcx, %%rax\n\t"
 		"mulq %%rdx\n\t"
-		"divq %%r8\n\t"
+		"divq %%rbx\n\t"
 		"movq %%rdx, %%rax\n\t"
-		: "=a" (r)
+		: "=a" (r) : "c"(a), "d"(b), "b"(mod)
 	);
 	return r;
 }
@@ -36,9 +36,9 @@ uint32_t mcn_addm(uint32_t a, uint32_t b, uint32_t mod)
 		"jnc  L1%=\n\t"
 		"incl %%edx\n\t"
 		"L1%=:\n\t"
-		"divl %%r8d\n\t"
+		"divl %%ebx\n\t"
 		"movl %%edx, %%eax\n\t"
-		: "=a" (r)
+		: "=a" (r) : "c"(a), "d"(b), "b"(mod)
 	);
 	return r;
 }
@@ -51,11 +51,11 @@ uint32_t mcn_subm(uint32_t a, uint32_t b, uint32_t mod)
 		"subl %%edx, %%eax\n\t"
 		"movl $0,    %%edx\n\t"
 		"jnb  L1%=\n\t"
-		"addl %%r8d, %%eax\n\t"
+		"addl %%ebx, %%eax\n\t"
 		"L1%=:\n\t"
-		"divl %%r8d\n\t"
+		"divl %%ebx\n\t"
 		"movl %%edx, %%eax\n\t"
-		: "=a" (r)
+		: "=a" (r) : "c"(a), "d"(b), "b"(mod)
 	);
 	return r;
 }
@@ -70,9 +70,9 @@ uint64_t mcn_addm(uint64_t a, uint64_t b, uint64_t mod)
 		"jnc  L1%=\n\t"
 		"incq %%rdx\n\t"
 		"L1%=:\n\t"
-		"divq %%r8\n\t"
+		"divq %%rbx\n\t"
 		"movq %%rdx, %%rax\n\t"
-		: "=a" (r)
+		: "=a" (r) : "c"(a), "d"(b), "b"(mod)
 	);
 	return r;
 }
@@ -85,11 +85,11 @@ uint64_t mcn_subm(uint64_t a, uint64_t b, uint64_t mod)
 		"subq %%rdx, %%rax\n\t"
 		"movq $0,    %%rdx\n\t"
 		"jnb  L1%=\n\t"
-		"addq %%r8,  %%rax\n\t"
+		"addq %%rbx, %%rax\n\t"
 		"L1%=:\n\t"
-		"divq %%r8\n\t"
+		"divq %%rbx\n\t"
 		"movq %%rdx, %%rax\n\t"
-		: "=a" (r)
+		: "=a" (r) : "c"(a), "d"(b), "b"(mod)
 	);
 	return r;
 }

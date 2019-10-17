@@ -178,14 +178,23 @@ T mpx_add(T *rp, const T *ap, long an, const T *bp, long bn)
 }
 
 template <class T>
+int add_n(T *f, const T *g, const T *h, int n)
+{
+	if (n == 0) return 0;
+	f[n] = mpx_add(f, g, n, h, n);
+	return n + (f[n] != 0);
+}
+
+template <class T>
 int add(T *f, const T *g, int n, const T *h, int m)
 {
 	if (n < m) {
 		swap(g, h);
 		swap(n, m);
 	}
-	if (n == 0) {
-		if (m == 0) f[0] = 0; else
+	if (n == m) 
+		return add_n<T>(f, g, h, n);
+	else if (n == 0) {
 		for (int i = 0; i < m; ++i) f[i] = h[i];
 		return m;
 	} else if (m == 0) {
@@ -636,7 +645,10 @@ int garner_convolution(NTT_BASE<T> *NTT_TABLE[N], T *rp, const T *ap, int an, co
 	int cn = 1, un = 0;
 	for (int I = 0; I < N; ++I)
 	{
-		int bc = NTT_TABLE[I]->convolution(b, ap, an, bp, bn, n); assert(bc == n);
+#ifndef NDEBUG
+		int bc = 
+#endif
+		NTT_TABLE[I]->convolution(b, ap, an, bp, bn, n); assert(bc == n);
 		// Garner Algorithm
 		// for each step, we solve "coeffs[I] * t[I] + constants[I] = b[I] (mod. m[I])"
 		//      coeffs[I] = m[0]m[1]...m[I-1]
@@ -806,11 +818,12 @@ void garner_convolution_test()
 	Type w[L+1];
 	for (i = 0; i < L; ++i) {
 		for (int j = 0; j <= i; ++j) {
-			Type temp[2]; int vn = wn > i ? wn - i : 0;
+			Type temp[2];
 			if (j < N && i-j < M)
-				wn = i + add<Type>(&w[i], &w[i], vn, temp,
-					   mul_1<Type>(temp, &x[j], 1, y[i-j]));
+				wn = add<Type>(&w[i], &w[i], wn, temp,
+					mul_1<Type>(temp, &x[j], 1, y[i-j]));
 		}
+		if (wn == 0) w[i] = 0; else --wn;
 		if (z[i] != w[i]) break;
 	}
 	assert(i == L);

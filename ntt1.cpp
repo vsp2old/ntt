@@ -177,22 +177,31 @@ T mpx_add(T *rp, const T *ap, long an, const T *bp, long bn)
 }
 
 template <class T>
-int add(T *rp, const T *ap, int an, const T *bp, int bn)
+int add_n(T *f, const T *g, const T *h, int n)
 {
-	if (an < bn) {
-		swap(ap, bp);
-		swap(an, bn);
+	if (n == 0) return 0;
+	f[n] = mpx_add(f, g, n, h, n);
+	return n + (f[n] != 0);
+}
+
+template <class T>
+int add(T *f, const T *g, int n, const T *h, int m)
+{
+	if (n < m) {
+		swap(g, h);
+		swap(n, m);
 	}
-	if (an == 0) {
-		if (bn == 0) rp[0] = 0; else
-		for (int i = 0; i < bn; ++i) rp[i] = bp[i];
-		return bn;
-	} else if (bn == 0) {
-		for (int i = 0; i < an; ++i) rp[i] = ap[i];
-		return an;
+	if (n == m) 
+		return add_n<T>(f, g, h, n);
+	else if (n == 0) {
+		for (int i = 0; i < m; ++i) f[i] = h[i];
+		return m;
+	} else if (m == 0) {
+		for (int i = 0; i < n; ++i) f[i] = g[i];
+		return n;
 	}
-	rp[an] = mpx_add<T>(rp, ap, an, bp, bn);
-	return an + (rp[an] != 0);
+	f[n] = mpx_add<T>(f, g, n, h, m);
+	return n + (f[n] != 0);
 }
 
 template <typename T>
@@ -342,15 +351,15 @@ constexpr int MAX_H = 20;
 constexpr unsigned long LTT_PRIMES[][2] = {
 	{     286354059558913UL, 5}, // 2^36 * 3^2 * 463 + 1
 	{     285838663483393UL, 5}, // 2^35 * 3 * 47 * 59 + 1
-	{     279782759596033UL, 5}, // 2^33 * 3^2 * 7 * 11 * 47 + 1
-	{ 6195545712378249217UL, 5}, // 2^48 * 3 * 11 * 23 * 29 + 1
+	{     279782759596033UL,15}, // 2^33 * 3^2 * 7 * 11 * 47 + 1
+	{ 6195545712378249217UL,20}, // 2^48 * 3 * 11 * 23 * 29 + 1
 	{ 1139410705724735489UL, 3}, // 2^52 * 11 * 23 + 1
 	{     300956948365313UL, 3}, // 2^35 * 19 * 461 + 1
 	{     293741403308033UL, 3}, // 2^35 * 83 * 103 + 1
-	{     288570262683649UL,13}, // 2^34 * 3 * 11 * 509 + 1
+	{     288570262683649UL,26}, // 2^34 * 3 * 11 * 509 + 1
 	{     278442729799681UL, 7}, // 2^33 * 3 * 5 * 2161 + 1
 #if EXTERN_INLINE
-	{15564440312192434177UL,87}, // 2^59 * 3^3 + 1
+	{15564440312192434177UL, 5}, // 2^59 * 3^3 + 1
 	{18446744069414584321UL, 7}, // 2^32 * 3 * 5 * 17 * 257 * 65537 + 1
 #endif
 //	{        0x70000000 0000000000000001,11}, // 2^92 * 7 + 1
@@ -363,7 +372,7 @@ constexpr int LTT_SIZE = sizeof(LTT_PRIMES) / sizeof(*LTT_PRIMES);
 
 constexpr unsigned int MTT_PRIMES[][2] = {
 	{3221225473, 5}, // 2^30 * 3 + 1
-	{3489660929,11}, // 2^28 * 13 + 1
+	{3489660929, 3}, // 2^28 * 13 + 1
 	{1541406721,17}, // 2^21 * 3 * 5 * 7^2 + 1,
 	{1224736769, 3}, // 2^24 * 73 + 1,
 	{1053818881, 7}, // 2^20 * 3 * 5 * 67 + 1
@@ -387,7 +396,7 @@ constexpr unsigned int MTT_PRIMES[][2] = {
 	{ 469762049, 3}, // 2^26 * 7 + 1
 	{ 167772161, 3}, // 2^25 * 5 + 1
 
-	{ 21626881, 67}, // 2^17 * 3 * 5 * 11 + 1
+	{ 21626881, 14}, // 2^17 * 3 * 5 * 11 + 1
 	{ 21495809,  3}, // 2^19 * 41 + 1
 	{ 20316161,  3}, // 2^17 * 5 * 31 + 1
 	{ 20054017,  5}, // 2^17 * 3^2 * 17 + 1
@@ -439,7 +448,8 @@ template <int H, typename T> class NTT
 		}
 		if (sign < 0) {
 			T h = invm<T>(n, mod);
-			for (int i = 0; i < n; ++i) a[i] = mulm<T>(a[i], h, mod);
+			for (int i = 0; i < n; ++i)
+				a[i] = mulm<T>(a[i], h, mod);
 		}
 	}
 
@@ -522,7 +532,10 @@ int garner_convolution(T *rp, const T *ap, int an, const T *bp, int bn)
 	for (int I = 0; I < N; ++I)
 	{
 		NTT<MAX_H, T>& ntt = *((NTT<MAX_H, T>*)NTT_PRIMES[I]);
-		int bc = ntt.convolution(b, ap, an, bp, bn, n); assert(bc == n);
+#ifndef NDEBUG
+		int bc = 
+#endif
+		ntt.convolution(b, ap, an, bp, bn, n); assert(bc == n);
 		// Garner Algorithm
 		// for each step, we solve "coeffs[I] * t[I] + constants[I] = b[I] (mod. m[I])"
 		//      coeffs[I] = m[0]m[1]...m[I-1]
@@ -676,11 +689,11 @@ void garner_convolution_test()
 	Type w[L+1];
 	for (i = 0; i < L; ++i) {
 		for (int j = 0; j <= i; ++j) {
-			Type temp[2]; int vn = wn > i ? wn - i : 0;
+			Type temp[2];
 			if (j < N && i-j < M)
-				wn = i + add<Type>(&w[i], &w[i], vn, temp,
-						 mul_1<Type>(temp, &x[j], 1, y[i-j]));
+				wn = add<Type>(&w[i], &w[i], wn, temp, mul_1<Type>(temp, &x[j], 1, y[i-j]));
 		}
+		if (wn == 0) w[i] = 0; else --wn;
 		if (z[i] != w[i]) break;
 	}
 	assert(i == L);
